@@ -9,7 +9,8 @@ logger = logging.getLogger(__name__)
 
 class EventBus(object):
     def __init__(self) -> None:
-        self._subscribers: Dict[Union[Type[EventBase], str], Set[Callable]] = {}
+        self._subscribers: Dict[Union[Type[EventBase],
+                                      str], Set[Callable]] = {}
 
     def subscribe(self, event: Union[Type[EventBase], str], func: Callable) -> None:
         """注册事件处理器
@@ -33,7 +34,9 @@ class EventBus(object):
         try:
             self._subscribers[event].remove(func)
         except KeyError:
-            logger.warning(f'试图移除事件 `{event}` 的一个不存在的事件处理器 `{func}`。')
+            logger.warning(
+                f"试图移除事件 `{event}` 的一个不存在的事件处理器 `{func}`。"
+            )
 
     def on(self, event: Union[Type[EventBase], str]) -> Callable:
         """以装饰器方式注册事件处理器。
@@ -41,13 +44,16 @@ class EventBus(object):
         Args:
             event (str | Type[EventBase]): 事件
         """
+
         def decorator(func: Callable) -> Callable:
             self.subscribe(event, func)
             return func
 
         return decorator
 
-    async def emit(self, event: Union[Type[EventBase], str], background=True, *args, **kwargs) -> None:
+    async def emit(
+        self, event: Union[Type[EventBase], str], *args, background=True, **kwargs
+    ) -> None:
         """触发事件
 
         Args:
@@ -56,7 +62,9 @@ class EventBus(object):
             args/kwargs: 传递给事件处理器的参数
         """
         if event in self._subscribers.keys():
-            tasks = [asyncio.create_task(subscriber(*args, **kwargs))
-                     for subscriber in self._subscribers[event]]
+            tasks = [
+                asyncio.create_task(subscriber(*args, **kwargs))
+                for subscriber in self._subscribers[event]
+            ]
             if not background:
                 await asyncio.wait(tasks)
