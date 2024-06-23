@@ -15,10 +15,7 @@ class MessageComponent(ABC):
         self.data = {}
 
     def to_dict(self) -> Dict[str, Any]:
-        return {
-            'type': self.message_type,
-            'data': self.data
-        }
+        return {"type": self.message_type, "data": self.data}
 
     @staticmethod
     def load_from_dict(data: dict) -> MessageComponentsType:
@@ -43,46 +40,55 @@ class MessageComponent(ABC):
             MessageComponent: 加载后的消息组件
         """
 
-        message_type = data.get('type')
-        if message_type == 'text':
-            return Text(data['data']['text'])
-        elif message_type == 'mention':
-            return Mention(data['data']['user_id'])
-        elif message_type == 'mention_all':
+        message_type = data.get("type")
+        if message_type == "text":
+            return Text(data["data"]["text"])
+        elif message_type == "mention":
+            return Mention(data["data"]["user_id"])
+        elif message_type == "mention_all":
             return MentionAll()
-        elif message_type == 'image':
-            return Image(data['data']['file_id'])
-        elif message_type == 'voice':
-            return Voice(data['data']['file_id'])
-        elif message_type == 'audio':
-            return Audio(data['data']['file_id'])
-        elif message_type == 'video':
-            return Video(data['data']['file_id'])
-        elif message_type == 'file':
-            return File(data['data']['file_id'])
-        elif message_type == 'location':
-            return Location(data['data']['latitude'], data['data']['longitude'], data['data']['title'], data['data']['content'])
-        elif message_type == 'reply':
-            return Reply(data['data']['message_id'], data['data'].get('user_id', None))
+        elif message_type == "image":
+            return Image(data["data"]["file_id"])
+        elif message_type == "voice":
+            return Voice(data["data"]["file_id"])
+        elif message_type == "audio":
+            return Audio(data["data"]["file_id"])
+        elif message_type == "video":
+            return Video(data["data"]["file_id"])
+        elif message_type == "file":
+            return File(data["data"]["file_id"])
+        elif message_type == "location":
+            return Location(
+                data["data"]["latitude"],
+                data["data"]["longitude"],
+                data["data"]["title"],
+                data["data"]["content"],
+            )
+        elif message_type == "reply":
+            return Reply(data["data"]["message_id"], data["data"].get("user_id", None))
         else:
             raise ValueError(f"Unknown message type: {message_type}")
 
     def __repr__(self) -> str:
-        return f'{self.message_type}: {self.data}'
+        return f"{self.message_type}: {self.data}"
 
     def __eq__(self, __value: MessageComponent) -> bool:  # type: ignore
         if isinstance(__value, MessageComponent):  # 实例化的
-            return self.message_type == __value.message_type and self.data == __value.data
+            return (
+                self.message_type == __value.message_type and self.data == __value.data
+            )
         elif isinstance(__value, type):  # 未实例化
             return isinstance(self, __value)
         else:
-            raise ValueError("Can't compare MessageComponent with non-MessageComponent object")
+            raise ValueError(
+                "Can't compare MessageComponent with non-MessageComponent object"
+            )
 
 
 class Text(MessageComponent):
     """纯文本"""
 
-    message_type: str = 'text'
+    message_type: str = "text"
     """消息类型（为避免与built-in函数type冲突，命名为message_type）"""
     text: str
     """纯文本内容"""
@@ -90,7 +96,7 @@ class Text(MessageComponent):
     def __init__(self, text: str) -> None:
         super().__init__()
         self.text = text
-        self.data['text'] = self.text
+        self.data["text"] = self.text
 
     def __eq__(self, __value: object) -> bool:
         if isinstance(__value, str):
@@ -100,11 +106,17 @@ class Text(MessageComponent):
         else:
             return False
 
+    def __repr__(self) -> str:
+        return self.text
+
+    def __str__(self) -> str:
+        return self.text
+
 
 class Mention(MessageComponent):
     """提及"""
 
-    message_type: str = 'mention'
+    message_type: str = "mention"
     """消息类型（为避免与built-in函数type冲突，命名为message_type）"""
     user_id: str
     """提及的用户 ID"""
@@ -112,13 +124,13 @@ class Mention(MessageComponent):
     def __init__(self, user_id: str) -> None:
         super().__init__()
         self.user_id = user_id
-        self.data['user_id'] = self.user_id
+        self.data["user_id"] = self.user_id
 
 
 class MentionAll(MessageComponent):
     """提及所有人"""
 
-    message_type: str = 'mention_all'
+    message_type: str = "mention_all"
     """消息类型（为避免与built-in函数type冲突，命名为message_type）"""
 
     def __init__(self) -> None:
@@ -128,7 +140,7 @@ class MentionAll(MessageComponent):
 class Image(MessageComponent):
     """图片"""
 
-    message_type: str = 'image'
+    message_type: str = "image"
     """消息类型（为避免与built-in函数type冲突，命名为message_type）"""
     file_id: str
     """图片文件 ID"""
@@ -136,13 +148,13 @@ class Image(MessageComponent):
     def __init__(self, file_id: str) -> None:
         super().__init__()
         self.file_id = file_id
-        self.data['file_id'] = self.file_id
+        self.data["file_id"] = self.file_id
 
 
 class Voice(MessageComponent):
     """语音"""
 
-    message_type: str = 'voice'
+    message_type: str = "voice"
     """消息类型（为避免与built-in函数type冲突，命名为message_type）"""
     file_id: str
     """语音文件 ID"""
@@ -150,7 +162,7 @@ class Voice(MessageComponent):
     def __init__(self, file_id: str) -> None:
         super().__init__()
         self.file_id = file_id
-        self.data['file_id'] = self.file_id
+        self.data["file_id"] = self.file_id
 
 
 class Audio(MessageComponent):
@@ -159,7 +171,7 @@ class Audio(MessageComponent):
     提示：音频消息段和语音消息段的区别是：语音消息段在聊天软件中表现为用户当场录制的声音，而音频消息段可能是直接发送的一个音乐文件，在消息列表中显示为可播放。
     """
 
-    message_type: str = 'audio'
+    message_type: str = "audio"
     """消息类型（为避免与built-in函数type冲突，命名为message_type）"""
     file_id: str
     """音频文件 ID"""
@@ -167,13 +179,13 @@ class Audio(MessageComponent):
     def __init__(self, file_id: str) -> None:
         super().__init__()
         self.file_id = file_id
-        self.data['file_id'] = self.file_id
+        self.data["file_id"] = self.file_id
 
 
 class Video(MessageComponent):
     """视频"""
 
-    message_type: str = 'video'
+    message_type: str = "video"
     """消息类型（为避免与built-in函数type冲突，命名为message_type）"""
     file_id: str
     """视频文件 ID"""
@@ -181,13 +193,13 @@ class Video(MessageComponent):
     def __init__(self, file_id: str) -> None:
         super().__init__()
         self.file_id = file_id
-        self.data['file_id'] = self.file_id
+        self.data["file_id"] = self.file_id
 
 
 class File(MessageComponent):
     """文件"""
 
-    message_type: str = 'file'
+    message_type: str = "file"
     """消息类型（为避免与built-in函数type冲突，命名为message_type）"""
     file_id: str
     """文件 ID"""
@@ -195,13 +207,13 @@ class File(MessageComponent):
     def __init__(self, file_id: str) -> None:
         super().__init__()
         self.file_id = file_id
-        self.data['file_id'] = self.file_id
+        self.data["file_id"] = self.file_id
 
 
 class Location(MessageComponent):
     """位置"""
 
-    message_type: str = 'location'
+    message_type: str = "location"
     """消息类型（为避免与built-in函数type冲突，命名为message_type）"""
     latitude: float
     """纬度"""
@@ -212,24 +224,26 @@ class Location(MessageComponent):
     content: str
     """地址内容"""
 
-    def __init__(self, latitude: float, longitude: float, title: str, content: str) -> None:
+    def __init__(
+        self, latitude: float, longitude: float, title: str, content: str
+    ) -> None:
         super().__init__()
         self.latitude = latitude
         self.longitude = longitude
         self.title = title
         self.content = content
         self.data = {
-            'latitude': self.latitude,
-            'longitude': self.longitude,
-            'title': self.title,
-            'content': self.content
+            "latitude": self.latitude,
+            "longitude": self.longitude,
+            "title": self.title,
+            "content": self.content,
         }
 
 
 class Reply(MessageComponent):
     """回复"""
 
-    message_type: str = 'reply'
+    message_type: str = "reply"
     """消息类型（为避免与built-in函数type冲突，命名为message_type）"""
     message_id: str
     """回复的消息 ID"""
@@ -240,15 +254,24 @@ class Reply(MessageComponent):
         super().__init__()
         self.message_id = message_id
         self.user_id = user_id
-        self.data['message_id'] = self.message_id
-        self.data['user_id'] = self.user_id
+        self.data["message_id"] = self.message_id
+        self.data["user_id"] = self.user_id
 
 
-MessageComponentsType = Union[Text, Mention, MentionAll, Image, Voice, Audio, Video, File, Location, Reply]
+MessageComponentsType = Union[
+    Text, Mention, MentionAll, Image, Voice, Audio, Video, File, Location, Reply
+]
 
 __all__ = [
-    'Text', 'Mention', 'MentionAll', 'Image',
-    'Voice', 'Audio', 'Video', 'File',
-    'Location', 'Reply',
-    'MessageComponentsType'
+    "Text",
+    "Mention",
+    "MentionAll",
+    "Image",
+    "Voice",
+    "Audio",
+    "Video",
+    "File",
+    "Location",
+    "Reply",
+    "MessageComponentsType",
 ]
