@@ -4,19 +4,23 @@ from typing import Callable, List, Optional, Type, TypeVar, Union
 
 from mirai_onebot.adapters.base import Adapter
 from mirai_onebot.api.interfaces.base import BotSelf, Request, Response
-from mirai_onebot.api.interfaces.message import (SendMessageRequest,
-                                                 SendMessageRequestParams,
-                                                 SendMessageResponse)
+from mirai_onebot.api.interfaces.message import (
+    SendMessageRequest,
+    SendMessageRequestParams,
+    SendMessageResponse,
+)
 from mirai_onebot.event import SLUG_TO_EVENT
 from mirai_onebot.event.bus import EventBus
 from mirai_onebot.event.event_base import EventBase
 from mirai_onebot.message.message_chain import MessageChain
-from mirai_onebot.message.message_components import (MessageComponent,
-                                                     MessageComponentsType,
-                                                     Text)
+from mirai_onebot.message.message_components import (
+    MessageComponent,
+    MessageComponentsType,
+    Text,
+)
 
 logger = logging.getLogger(__name__)
-ResponseT = TypeVar('ResponseT', bound=Response)
+ResponseT = TypeVar("ResponseT", bound=Response)
 
 
 class Bot(object):
@@ -25,7 +29,7 @@ class Bot(object):
         adapter: Adapter,
         bus: Optional[EventBus] = None,
         bot_platform: Optional[str] = None,
-        bot_user_id: Optional[str] = None
+        bot_user_id: Optional[str] = None,
     ) -> None:
         """MiraiOneBot 高级类，用于处理事件、发送消息。用户应该直接基于该类进行开发
 
@@ -46,7 +50,7 @@ class Bot(object):
             self.bus = bus
 
         self.adapter.register_event_bus(self.bus)
-        self.bus.subscribe('onebot_event', self.unserialize_raw_event)
+        self.bus.subscribe("onebot_event", self.unserialize_raw_event)
 
     async def unserialize_raw_event(self, data: dict):
         """反序列化原始事件
@@ -55,19 +59,21 @@ class Bot(object):
             data (str): 事件
         """
         # 筛选自身事件
-        if self.bot_platform is not None and 'self' in data.keys():
-            if data['self']['platform'] != self.bot_platform:
+        if self.bot_platform is not None and "self" in data.keys():
+            if data["self"]["platform"] != self.bot_platform:
                 return
 
-        if self.bot_user_id is not None and 'self' in data.keys():
-            if data['self']['user_id'] != self.bot_platform:
+        if self.bot_user_id is not None and "self" in data.keys():
+            if data["self"]["user_id"] != self.bot_platform:
                 return
 
         # 解析
         try:
-            event = SLUG_TO_EVENT[data['type']][data['detail_type']]
+            if data.get("type", None) is None:  # TODO: OneBot 11 事件解析
+                pass
+            event = SLUG_TO_EVENT[data["type"]][data["detail_type"]]
         except KeyError:
-            logger.debug(f'不支持的事件：{data}')
+            logger.debug(f"不支持的事件：{data}")
             await self.bus.emit(f'{data["type"]}.{data["detail_type"]}', data)
             return
 
@@ -77,13 +83,13 @@ class Bot(object):
         """启动机器人，然后阻塞"""
         self.adapter.start()
 
-        logger.info(f'{self.adapter} 适配器启动完成。')
+        logger.info(f"{self.adapter} 适配器启动完成。")
 
         try:
             asyncio.get_event_loop().run_forever()
         except KeyboardInterrupt:
             self.adapter.stop()
-            logger.info(f'{self.adapter} 适配器停止。')
+            logger.info(f"{self.adapter} 适配器停止。")
 
     def subscribe(self, event: Union[Type[EventBase], str], func: Callable):
         """注册事件的回调函数
@@ -111,7 +117,9 @@ class Bot(object):
         """
         return self.bus.on(event)
 
-    async def call(self, request: Request, response_type: Type[ResponseT], auto_set_self=True) -> ResponseT:
+    async def call(
+        self, request: Request, response_type: Type[ResponseT], auto_set_self=True
+    ) -> ResponseT:
         """调用API
 
         Args:
@@ -122,13 +130,21 @@ class Bot(object):
         Returns:
             Response: 调用返回值
         """
-        if auto_set_self and self.bot_platform is not None and self.bot_user_id is not None:
+        if (
+            auto_set_self
+            and self.bot_platform is not None
+            and self.bot_user_id is not None
+        ):
             request.self = BotSelf(platform=self.bot_platform, user_id=self.bot_user_id)
 
         return await self.adapter.call(request, response_type)
 
     # 简化 API
-    async def send_group_message(self, group_id: str, message: Union[MessageChain, str, List[str], List[MessageComponentsType]]):
+    async def send_group_message(
+        self,
+        group_id: str,
+        message: Union[MessageChain, str, List[str], List[MessageComponentsType]],
+    ):
         """发送私聊消息
 
         Args:
@@ -141,23 +157,28 @@ class Bot(object):
         if isinstance(message, str):
             message_chain = MessageChain([Text(message)])
         elif isinstance(message, list):
-            message_chain = MessageChain([
-                x if isinstance(x, MessageComponent) else Text(x)
-                for x in message
-            ])
+            message_chain = MessageChain(
+                [x if isinstance(x, MessageComponent) else Text(x) for x in message]
+            )
 
-        return (await self.call(
-            request=SendMessageRequest(
-                params=SendMessageRequestParams(
-                    detail_type='group',
-                    group_id=group_id,
-                    message=message_chain.to_dict()
-                )
-            ),
-            response_type=SendMessageResponse
-        )).data
+        return (
+            await self.call(
+                request=SendMessageRequest(
+                    params=SendMessageRequestParams(
+                        detail_type="group",
+                        group_id=group_id,
+                        message=message_chain.to_dict(),
+                    )
+                ),
+                response_type=SendMessageResponse,
+            )
+        ).data
 
-    async def send_private_message(self, user_id: str, message: Union[MessageChain, str, List[str], List[MessageComponentsType]]):
+    async def send_private_message(
+        self,
+        user_id: str,
+        message: Union[MessageChain, str, List[str], List[MessageComponentsType]],
+    ):
         """发送私聊消息
 
         Args:
@@ -170,18 +191,17 @@ class Bot(object):
         if isinstance(message, str):
             message_chain = MessageChain([Text(message)])
         elif isinstance(message, list):
-            message_chain = MessageChain([
-                x if isinstance(x, MessageComponent) else Text(x)
-                for x in message
-            ])
+            message_chain = MessageChain(
+                [x if isinstance(x, MessageComponent) else Text(x) for x in message]
+            )
 
         return await self.call(
             request=SendMessageRequest(
                 params=SendMessageRequestParams(
-                    detail_type='private',
+                    detail_type="private",
                     user_id=user_id,
-                    message=message_chain.to_dict()
+                    message=message_chain.to_dict(),
                 )
             ),
-            response_type=SendMessageResponse
+            response_type=SendMessageResponse,
         )

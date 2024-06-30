@@ -132,15 +132,18 @@ class ReverseWebsocketAdapter(Adapter):
             await self.emit("onebot_event", data)
 
     async def _call_api(
-        self, action: str, params: dict, echo: str = secrets.token_hex(8)
+        self, action: str, params: dict, echo: Optional[str] = None
     ) -> Union[Dict[str, Any], None]:
         """内部接口。直接调用API。本接口只发送给第一个连接的客户端。
 
         Args:
             action (str): 参见父类
             params (dict): 参见父类
-            echo (str, optional): 参见父类. Defaults to secrets.token_hex(8).
+            echo (str, optional): 参见父类. Defaults to secrets.token_hex(8) default factory.
         """
+
+        if echo is None:
+            echo = secrets.token_hex(8)
 
         if len(self.ws_connections) == 0:
             return None

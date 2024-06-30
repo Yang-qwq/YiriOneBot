@@ -1,6 +1,6 @@
 import abc
 import secrets
-from typing import Any, Dict, Type, Union
+from typing import Any, Dict, Optional, Type, Union
 
 from mirai_onebot.api.interfaces.base import Request, Response
 
@@ -9,7 +9,9 @@ class ApiProvider(abc.ABC):
     """用于提供Api调用。"""
 
     @abc.abstractmethod
-    async def _call_api(self, action: str, params: dict, echo: str = secrets.token_hex(8)) -> Union[Dict[str, Any], None]:
+    async def _call_api(
+        self, action: str, params: dict, echo: Optional[str] = None
+    ) -> Union[Dict[str, Any], None]:
         """内部接口。直接调用API
 
         Args:
@@ -24,5 +26,9 @@ class ApiProvider(abc.ABC):
         Args:
             api (Request): API接口
         """
-        resp = await self._call_api(request.action, request.params.model_dump(mode='json'), request.echo if request.echo is not None else secrets.token_hex(8))
+        resp = await self._call_api(
+            request.action,
+            request.params.model_dump(mode="json"),
+            request.echo if request.echo is not None else secrets.token_hex(8),
+        )
         return response_type.model_validate(resp)
